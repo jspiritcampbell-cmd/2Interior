@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>AI Interior Design Assistant</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Tailwind via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { color-scheme: light; }
+    .shadow-soft { box-shadow: 0 8px 30px rgba(0,0,0,0.06); }
+  </style>
+</head>
+<body class="bg-white text-slate-900">
+  <header class="border-b border-slate-200">
+    <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+      <h1 class="text-xl font-semibold">AI Interior Design Assistant</h1>
+      <span class="text-sm text-slate-600">Single-file HTML</span>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-8 grid gap-6">
+    <!-- Mode selector -->
+    <section class="rounded-2xl shadow-soft border border-slate-200 bg-white p-6">
+      <h2 class="text-lg font-semibold mb-3">Backend Mode</h2>
+      <div class="space-y-3">
+        <label class="flex items-start gap-3">
+          <input type="radio" name="mode" value="vercel" class="mt-1" checked />
+          <div>
+            <div class="font-medium">Vercel API (recommended)</div>
+            <div class="text-sm text-slate-600">
+              Calls your deployed <code>/api/design</code> endpoint (same as the Next.js route).
+            </div>
+            <div class="mt-2 grid gap-2 sm:grid-cols-2">
+              <div>
+                <label class="text-sm font-medium text-slate-700">Base URL (optional)</label>
+                <input id="baseUrl" class="w-full rounded-xl border border-slate-300 px-3 py-2"
+                       placeholder="https://your-project.vercel.app (leave empty for same origin)" />
+              </div>
+            </div>
+          </div>
+        </label>
+
+        <label class="flex items-start gap-3">
+          <input type="radio" name="mode" value="openai" class="mt-1" />
+          <div>
+            <div class="font-medium">Direct OpenAI (unsafe for production)</div>
+            <div class="text-sm text-amber-700">
+              For local testing only. Your API key is exposed in the browser. Don’t deploy with this.
+            </div>
+            <div class="mt-2 grid gap-2 sm:grid-cols-3">
+              <div class="sm:col-span-2">
+                <label class="text-sm font-medium text-slate-700">OpenAI API Key</label>
+                <input id="openaiKey" type="password" class="w-full rounded-xl border border-slate-300 px-3 py-2"
+                       placeholder="sk-..." />
+              </div>
+              <div>
+                <label class="text-sm font-medium text-slate-700">Model</label>
+                <input id="openaiModel" class="w-full rounded-xl border border-slate-300 px-3 py-2"
+                       value="gpt-4o-mini" />
+              </div>
+            </div>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <!-- Form -->
+    <section class="rounded-2xl shadow-soft border border-slate-200 bg-white p-6">
+      <h2 class="text-lg font-semibold mb-4">Describe Your Space</h2>
+      <form id="designForm" class="grid gap-4 md:grid-cols-2">
+        <div>
+          <label class="text-sm font-medium text-slate-700">Room Type</label>
+          <input id="roomType" class="w-full rounded-xl border border-slate-300 px-3 py-2"
+                 placeholder="Living room, bedroom..." />
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-700">Dimensions</label>
+          <input id="dimensions" class="w-full rounded-xl border border-slate-300 px-3 py-2"
+                 placeholder="12' x 15', 10ft ceiling..." />
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-700">Desired Vibe</label>
+          <input id="vibe" class="w-full rounded-xl border border-slate-300 px-3 py-2"
+                 placeholder="Coastal, Japandi, Boho, Minimal..." />
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-700">Color Preferences</label>
+          <input id="colors" class="w-full rounded-xl border border-slate-300 px-3 py-2"
+                 placeholder="Whites, soft blues, natural wood..." />
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-700">Budget</label>
+          <input id="budget" class="w-full rounded-xl border border-slate-300 px-3 py-2"
+                 placeholder="$1,500" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="text-sm font-medium text-slate-700">Notes</label>
+          <textarea id="notes" rows="4" class="w-full rounded-xl border border-slate-300 px-3 py-2"
+                    placeholder="Windows on south wall, keep existing sofa, pet-friendly materials..."></textarea>
+        </div>
+        <div class="md:col-span-2 flex items-center gap-3">
+          <button id="submitBtn" class="inline-flex items-center justify-center rounded-xl px-4 py-2 font-medium bg-slate-900 text-white hover:bg-slate-800">
+            Generate Design Plan
+          </button>
+          <span id="errorMsg" class="text-sm text-red-600"></span>
+        </div>
+      </form>
+    </section>
+
+    <!-- Result -->
+    <section id="resultSection" class="hidden rounded-2xl shadow-soft border border-slate-200 bg-white p-6">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h3 id="theme" class="text-lg font-semibold"></h3>
+          <p id="budgetNotes" class="text-sm text-slate-600 mt-1"></p>
+        </div>
+        <button id="copyBtn" class="inline-flex items-center justify-center rounded-xl px-4 py-2 font-medium bg-slate-900 text-white hover:bg-slate-800">
+          Copy JSON
+        </button>
+      </div>
+
+      <div class="mt-6 grid gap-6 md:grid-cols-2">
+        <div>
+          <h4 class="font-medium mb-2">Palette</h4>
+          <div id="palette" class="grid grid-cols-2 gap-3"></div>
+        </div>
+
+        <div>
+          <h4 class="font-medium mb-2">Layout Tips</h4>
+          <ul id="layoutTips" class="list-disc pl-5 space-y-1"></ul>
+        </div>
+
+        <div>
+          <h4 class="font-medium mb-2">Suggestions</h4>
+          <ul id="suggestions" class="list-disc pl-5 space-y-1"></ul>
+        </div>
+
+        <div>
+          <h4 class="font-medium mb-2">Image Prompt</h4>
+          <textarea id="imagePrompt" class="w-full rounded-xl border border-slate-300 px-3 py-2" rows="6" readonly></textarea>
+          <p class="text-xs text-slate-500 mt-2">Paste into your preferred image tool.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- JSON dump -->
+    <section id="jsonSection" class="hidden rounded-2xl shadow-soft border border-slate-200 bg-white p-6">
+      <h4 class="font-medium mb-2">Raw JSON</h4>
+      <pre id="jsonOut" class="whitespace-pre-wrap text-xs bg-slate-50 rounded-xl p-4 border border-slate-200"></pre>
+    </section>
+  </main>
+
+  <script>
+    // ---------- Prompt logic (shared with both modes) ----------
+    const SYSTEM_PROMPT = `
+You are an AI interior design assistant that helps users visualize, plan, and personalize living spaces.
+Your personality is creative, calm, and professional.
+
+GOAL:
+Help users describe and design rooms with style suggestions, color palettes, furniture ideas, and layout concepts.
+Structure responses clearly and practically.
+
+CONTEXT:
+- Users may provide photos (not required), dimensions, vibe, and budget.
+- Provide:
+  1) Style recommendations (modern, boho, minimalist, etc.)
+  2) Color palette suggestions (3–5 complementary colors)
+  3) Furniture and decor lists
+  4) Layout ideas
+  5) An image-generation prompt users could plug into an AI image tool
+
+OUTPUT:
+Return valid JSON with the following shape:
+{
+  "theme": string,
+  "palette": string[], // list of HEX codes like "#AABBCC"
+  "suggestions": string[],
+  "layout_tips": string[],
+  "image_prompt": string,
+  "budget_notes": string
+}
+
+CONSTRAINTS:
+- HEX codes must be valid (#RRGGBB).
+- Keep suggestions practical for the stated budget.
+- Tone: inspiring and actionable.
+`;
+
+    function buildUserPrompt(input) {
+      return `
+Extract the user's inputs and produce the JSON.
+
+User Inputs:
+- Room Type: ${input.roomType || "unspecified"}
+- Dimensions: ${input.dimensions || "unspecified"}
+- Desired Vibe: ${input.vibe || "unspecified"}
+- Color Preferences: ${input.colors || "unspecified"}
+- Budget: ${input.budget || "unspecified"}
+- Notes: ${input.notes || "none"}
+`;
+    }
+
+    // ---------- UI helpers ----------
+    const $ = (id) => document.getElementById(id);
+    const form = $("designForm");
+    const submitBtn = $("submitBtn");
+    const errorMsg = $("errorMsg");
+    const resultSection = $("resultSection");
+    const jsonSection = $("jsonSection");
+    const themeEl = $("theme");
+    const budgetNotesEl = $("budgetNotes");
+    const paletteEl = $("palette");
+    const layoutTipsEl = $("layoutTips");
+    const suggestionsEl = $("suggestions");
+    const imagePromptEl = $("imagePrompt");
+    const jsonOut = $("jsonOut");
+    const copyBtn = $("copyBtn");
+
+    function showError(msg) {
+      errorMsg.textContent = msg || "";
+    }
+    function setLoading(isLoading) {
+      submitBtn.disabled = isLoading;
+      submitBtn.textContent = isLoading ? "Thinking..." : "Generate Design Plan";
+    }
+    function clearResult() {
+      resultSection.classList.add("hidden");
+      jsonSection.classList.add("hidden");
+      paletteEl.innerHTML = "";
+      layoutTipsEl.innerHTML = "";
+      suggestionsEl.innerHTML = "";
+      imagePromptEl.value = "";
+      themeEl.textContent = "";
+      budgetNotesEl.textContent = "";
+      jsonOut.textContent = "";
+    }
+    function renderResult(data) {
+      themeEl.textContent = data.theme;
+      budgetNotesEl.textContent = data.budget_notes;
+
+      // Palette
+      const frag = document.createDocumentFragment();
+      data.palette.forEach((color) => {
+        const wrap = document.createElement("div");
+        wrap.className = "flex items-center gap-2";
+        const sw = document.createElement("div");
+        sw.className = "h-8 w-8 rounded-md border border-slate-300";
+        sw.style.backgroundColor = color;
+        sw.title = color;
+        const code = document.createElement("code");
+        code.className = "text-sm";
+        code.textContent = color;
+        wrap.appendChild(sw);
+        wrap.appendChild(code);
+        frag.appendChild(wrap);
+      });
+      paletteEl.appendChild(frag);
+
+      // Lists
+      data.layout_tips.forEach((t) => {
+        const li = document.createElement("li");
+        li.textContent = t;
+        layoutTipsEl.appendChild(li);
+      });
+      data.suggestions.forEach((s) => {
+        const li = document.createElement("li");
+        li.textContent = s;
+        suggestionsEl.appendChild(li);
+      });
+
+      // Image prompt
+      imagePromptEl.value = data.image_prompt;
+
+      // JSON dump
+      jsonOut.textContent = JSON.stringify(data, null, 2);
+
+      resultSection.classList.remove("hidden");
+      jsonSection.classList.remove("hidden");
+    }
+
+    // ---------- Mode detection ----------
+    function getMode() {
+      const checked = document.querySelector('input[name="mode"]:checked');
+      return checked ? checked.value : "vercel";
+    }
+
+    // ---------- Calls ----------
+    async function callVercelAPI(payload) {
+      const baseUrl = $("baseUrl").value.trim();
+      const url = (baseUrl ? baseUrl.replace(/\/+$/, "") : "") + "/api/design";
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || "API error");
+      }
+      return data;
+    }
+
+    async function callOpenAIInBrowser(payload) {
+      const apiKey = $("openaiKey").value.trim();
+      const model = $("openaiModel").value.trim() || "gpt-4o-mini";
+      if (!apiKey) throw new Error("Missing OpenAI API key");
+
+      const body = {
+        model,
+        temperature: 0.7,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: buildUserPrompt(payload) }
+        ]
+      };
+
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      const json = await res.json();
+      if (!res.ok) {
+        const msg = json?.error?.message || "OpenAI error";
+        throw new Error(msg);
+      }
+      const content = json?.choices?.[0]?.message?.content || "{}";
+      let parsed;
+      try {
+        parsed = JSON.parse(content);
+      } catch {
+        throw new Error("Model returned non-JSON content");
+      }
+
+      // Minimal shape check
+      const valid =
+        parsed &&
+        typeof parsed.theme === "string" &&
+        Array.isArray(parsed.palette) &&
+        Array.isArray(parsed.suggestions) &&
+        Array.isArray(parsed.layout_tips) &&
+        typeof parsed.image_prompt === "string" &&
+        typeof parsed.budget_notes === "string";
+
+      if (!valid) {
+        throw new Error("Model returned unexpected structure");
+      }
+      return parsed;
+    }
+
+    // ---------- Submit handler ----------
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      showError("");
+      clearResult();
+      setLoading(true);
+
+      const payload = {
+        roomType: $("roomType").value.trim(),
+        dimensions: $("dimensions").value.trim(),
+        vibe: $("vibe").value.trim(),
+        colors: $("colors").value.trim(),
+        budget: $("budget").value.trim(),
+        notes: $("notes").value.trim()
+      };
+
+      try {
+        const mode = getMode();
+        const data = mode === "openai"
+          ? await callOpenAIInBrowser(payload)
+          : await callVercelAPI(payload);
+
+        renderResult(data);
+      } catch (err) {
+        showError(String(err?.message || err));
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    // ---------- Copy JSON ----------
+    copyBtn.addEventListener("click", () => {
+      const text = jsonOut.textContent || "";
+      if (!text) return;
+      navigator.clipboard.writeText(text);
+    });
+  </script>
+</body>
+</html>
