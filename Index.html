@@ -2,394 +2,471 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>AI Interior Design Assistant</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Tailwind via CDN -->
+  <title>AI Interior Design Assistant</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="description" content="Visualize, plan, and personalize living spaces with style suggestions, palettes, furniture ideas, and layout concepts."/>
   <style>
     :root { color-scheme: light; }
-    .shadow-soft { box-shadow: 0 8px 30px rgba(0,0,0,0.06); }
+    .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .chip { @apply inline-flex items-center rounded-full border px-3 py-1 text-sm; }
   </style>
 </head>
-<body class="bg-white text-slate-900">
-  <header class="border-b border-slate-200">
-    <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-      <h1 class="text-xl font-semibold">AI Interior Design Assistant</h1>
-      <span class="text-sm text-slate-600">Single-file HTML</span>
-    </div>
-  </header>
+<body class="bg-slate-50 text-slate-900">
+  <div class="mx-auto max-w-6xl p-6 md:p-10">
+    <header class="mb-6 flex items-start justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-bold">AI Interior Design Assistant</h1>
+        <p class="text-slate-600">Creative, calm, and professional — like a designer walking you through a vision board.</p>
+      </div>
+      <a href="#example" class="text-sm text-indigo-600 hover:underline">See example</a>
+    </header>
 
-  <main class="max-w-5xl mx-auto px-4 py-8 grid gap-6">
-    <!-- Mode selector -->
-    <section class="rounded-2xl shadow-soft border border-slate-200 bg-white p-6">
-      <h2 class="text-lg font-semibold mb-3">Backend Mode</h2>
-      <div class="space-y-3">
-        <label class="flex items-start gap-3">
-          <input type="radio" name="mode" value="vercel" class="mt-1" checked />
-          <div>
-            <div class="font-medium">Vercel API (recommended)</div>
-            <div class="text-sm text-slate-600">
-              Calls your deployed <code>/api/design</code> endpoint (same as the Next.js route).
-            </div>
-            <div class="mt-2 grid gap-2 sm:grid-cols-2">
-              <div>
-                <label class="text-sm font-medium text-slate-700">Base URL (optional)</label>
-                <input id="baseUrl" class="w-full rounded-xl border border-slate-300 px-3 py-2"
-                       placeholder="https://your-project.vercel.app (leave empty for same origin)" />
-              </div>
+    <main class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <!-- Left: Form -->
+      <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <h2 class="mb-4 text-lg font-semibold">Describe Your Space</h2>
+        <form id="designForm" class="space-y-5" onsubmit="event.preventDefault(); generateDesign();">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label class="block">
+              <span class="mb-1 block text-sm font-medium">Room type</span>
+              <select id="roomType" class="w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
+                <option>Living Room</option>
+                <option>Bedroom</option>
+                <option>Kitchen</option>
+                <option>Dining Room</option>
+                <option>Home Office</option>
+                <option>Bathroom</option>
+                <option>Entryway</option>
+                <option>Studio</option>
+              </select>
+            </label>
+
+            <label class="block">
+              <span class="mb-1 block text-sm font-medium">Approx. dimensions (ft)</span>
+              <input id="dimensions" type="text" placeholder="e.g., 12 x 16" class="w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500" />
+            </label>
+          </div>
+
+          <label class="block">
+            <span class="mb-1 block text-sm font-medium">Desired vibe / mood</span>
+            <input id="vibe" type="text" placeholder="e.g., modern, boho, minimalist, cozy, bright, serene" class="w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500" />
+          </label>
+
+          <label class="block">
+            <span class="mb-1 block text-sm font-medium">Color preferences</span>
+            <input id="colors" type="text" placeholder="e.g., sage green, sand, white, black accents" class="w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500" />
+          </label>
+
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label class="block">
+              <span class="mb-1 block text-sm font-medium">Budget (USD)</span>
+              <input id="budget" type="number" min="0" step="100" placeholder="e.g., 2000" class="w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500" />
+            </label>
+
+            <label class="block">
+              <span class="mb-1 block text-sm font-medium">Natural light</span>
+              <select id="light" class="w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
+                <option>Abundant</option>
+                <option>Moderate</option>
+                <option>Low</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="block">
+            <span class="mb-1 block text-sm font-medium">Notes (needs, constraints, existing items)</span>
+            <textarea id="notes" rows="4" placeholder="e.g., keep the blue sofa, need storage, no leather, kid-friendly surfaces" class="w-full rounded-xl border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+          </label>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <button type="submit" class="rounded-xl bg-indigo-600 px-4 py-2 text-white shadow hover:bg-indigo-700">Generate Plan</button>
+            <button type="button" id="presetBtn" class="rounded-xl border border-slate-300 px-4 py-2 hover:bg-slate-50">Fill Example</button>
+            <button type="button" id="clearBtn" class="rounded-xl border border-slate-300 px-4 py-2 hover:bg-slate-50">Clear</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Right: Output -->
+      <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <h2 class="mb-4 text-lg font-semibold">Results</h2>
+        <div id="summaryCard" class="mb-4 hidden rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <h3 class="font-semibold">Design direction</h3>
+          <p id="summaryText" class="mt-1 text-sm text-slate-700"></p>
+        </div>
+
+        <div id="paletteCard" class="mb-4 hidden rounded-xl border border-slate-200 p-4">
+          <div class="mb-2 flex items-center justify-between">
+            <h3 class="font-semibold">Palette</h3>
+            <button id="copyPalette" class="text-sm text-indigo-600 hover:underline">Copy HEX</button>
+          </div>
+          <div id="swatches" class="grid grid-cols-5 gap-2"></div>
+        </div>
+
+        <div id="suggestionsCard" class="mb-4 hidden rounded-xl border border-slate-200 p-4">
+          <h3 class="mb-2 font-semibold">Suggestions</h3>
+          <ul id="suggestionsList" class="list-disc pl-5 text-sm"></ul>
+        </div>
+
+        <div id="layoutCard" class="mb-4 hidden rounded-xl border border-slate-200 p-4">
+          <h3 class="mb-2 font-semibold">Layout ideas</h3>
+          <ul id="layoutList" class="list-disc pl-5 text-sm"></ul>
+        </div>
+
+        <div id="promptsCard" class="mb-4 hidden rounded-xl border border-slate-200 p-4">
+          <div class="mb-2 flex items-center justify-between">
+            <h3 class="font-semibold">Image prompts</h3>
+            <button id="copyPrompts" class="text-sm text-indigo-600 hover:underline">Copy</button>
+          </div>
+          <p class="mb-1 text-sm text-slate-600">Use with OpenAI Image Gen, Midjourney, or Replit AI Canvas.</p>
+          <pre id="promptText" class="code whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-xs"></pre>
+        </div>
+
+        <div id="jsonCard" class="hidden rounded-2xl border border-slate-200 p-4">
+          <div class="mb-2 flex items-center justify-between">
+            <h3 class="font-semibold">JSON Output</h3>
+            <div class="flex items-center gap-2">
+              <button id="copyJSON" class="text-sm text-indigo-600 hover:underline">Copy</button>
             </div>
           </div>
-        </label>
+          <pre id="jsonOut" class="code whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-xs"></pre>
+        </div>
+      </section>
+    </main>
 
-        <label class="flex items-start gap-3">
-          <input type="radio" name="mode" value="openai" class="mt-1" />
-          <div>
-            <div class="font-medium">Direct OpenAI (unsafe for production)</div>
-            <div class="text-sm text-amber-700">
-              For local testing only. Your API key is exposed in the browser. Don’t deploy with this.
-            </div>
-            <div class="mt-2 grid gap-2 sm:grid-cols-3">
-              <div class="sm:col-span-2">
-                <label class="text-sm font-medium text-slate-700">OpenAI API Key</label>
-                <input id="openaiKey" type="password" class="w-full rounded-xl border border-slate-300 px-3 py-2"
-                       placeholder="sk-..." />
-              </div>
-              <div>
-                <label class="text-sm font-medium text-slate-700">Model</label>
-                <input id="openaiModel" class="w-full rounded-xl border border-slate-300 px-3 py-2"
-                       value="gpt-4o-mini" />
-              </div>
-            </div>
-          </div>
-        </label>
-      </div>
+    <section id="example" class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <h2 class="mb-2 text-lg font-semibold">Quick Example</h2>
+      <p class="text-sm text-slate-700">“I'm redoing my small living room. I love coastal colors, lots of light, and simple furniture. I have a $2,000 budget.”</p>
+      <button class="mt-3 rounded-xl border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50" id="loadCoastal">Load this example</button>
     </section>
 
-    <!-- Form -->
-    <section class="rounded-2xl shadow-soft border border-slate-200 bg-white p-6">
-      <h2 class="text-lg font-semibold mb-4">Describe Your Space</h2>
-      <form id="designForm" class="grid gap-4 md:grid-cols-2">
-        <div>
-          <label class="text-sm font-medium text-slate-700">Room Type</label>
-          <input id="roomType" class="w-full rounded-xl border border-slate-300 px-3 py-2"
-                 placeholder="Living room, bedroom..." />
-        </div>
-        <div>
-          <label class="text-sm font-medium text-slate-700">Dimensions</label>
-          <input id="dimensions" class="w-full rounded-xl border border-slate-300 px-3 py-2"
-                 placeholder="12' x 15', 10ft ceiling..." />
-        </div>
-        <div>
-          <label class="text-sm font-medium text-slate-700">Desired Vibe</label>
-          <input id="vibe" class="w-full rounded-xl border border-slate-300 px-3 py-2"
-                 placeholder="Coastal, Japandi, Boho, Minimal..." />
-        </div>
-        <div>
-          <label class="text-sm font-medium text-slate-700">Color Preferences</label>
-          <input id="colors" class="w-full rounded-xl border border-slate-300 px-3 py-2"
-                 placeholder="Whites, soft blues, natural wood..." />
-        </div>
-        <div>
-          <label class="text-sm font-medium text-slate-700">Budget</label>
-          <input id="budget" class="w-full rounded-xl border border-slate-300 px-3 py-2"
-                 placeholder="$1,500" />
-        </div>
-        <div class="md:col-span-2">
-          <label class="text-sm font-medium text-slate-700">Notes</label>
-          <textarea id="notes" rows="4" class="w-full rounded-xl border border-slate-300 px-3 py-2"
-                    placeholder="Windows on south wall, keep existing sofa, pet-friendly materials..."></textarea>
-        </div>
-        <div class="md:col-span-2 flex items-center gap-3">
-          <button id="submitBtn" class="inline-flex items-center justify-center rounded-xl px-4 py-2 font-medium bg-slate-900 text-white hover:bg-slate-800">
-            Generate Design Plan
-          </button>
-          <span id="errorMsg" class="text-sm text-red-600"></span>
-        </div>
-      </form>
-    </section>
-
-    <!-- Result -->
-    <section id="resultSection" class="hidden rounded-2xl shadow-soft border border-slate-200 bg-white p-6">
-      <div class="flex items-start justify-between gap-4">
-        <div>
-          <h3 id="theme" class="text-lg font-semibold"></h3>
-          <p id="budgetNotes" class="text-sm text-slate-600 mt-1"></p>
-        </div>
-        <button id="copyBtn" class="inline-flex items-center justify-center rounded-xl px-4 py-2 font-medium bg-slate-900 text-white hover:bg-slate-800">
-          Copy JSON
-        </button>
-      </div>
-
-      <div class="mt-6 grid gap-6 md:grid-cols-2">
-        <div>
-          <h4 class="font-medium mb-2">Palette</h4>
-          <div id="palette" class="grid grid-cols-2 gap-3"></div>
-        </div>
-
-        <div>
-          <h4 class="font-medium mb-2">Layout Tips</h4>
-          <ul id="layoutTips" class="list-disc pl-5 space-y-1"></ul>
-        </div>
-
-        <div>
-          <h4 class="font-medium mb-2">Suggestions</h4>
-          <ul id="suggestions" class="list-disc pl-5 space-y-1"></ul>
-        </div>
-
-        <div>
-          <h4 class="font-medium mb-2">Image Prompt</h4>
-          <textarea id="imagePrompt" class="w-full rounded-xl border border-slate-300 px-3 py-2" rows="6" readonly></textarea>
-          <p class="text-xs text-slate-500 mt-2">Paste into your preferred image tool.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- JSON dump -->
-    <section id="jsonSection" class="hidden rounded-2xl shadow-soft border border-slate-200 bg-white p-6">
-      <h4 class="font-medium mb-2">Raw JSON</h4>
-      <pre id="jsonOut" class="whitespace-pre-wrap text-xs bg-slate-50 rounded-xl p-4 border border-slate-200"></pre>
-    </section>
-  </main>
+    <footer class="mt-10 text-center text-xs text-slate-500">
+      <p>Made for quick, actionable design planning. No data leaves this page.</p>
+    </footer>
+  </div>
 
   <script>
-    // ---------- Prompt logic (shared with both modes) ----------
-    const SYSTEM_PROMPT = `
-You are an AI interior design assistant that helps users visualize, plan, and personalize living spaces.
-Your personality is creative, calm, and professional.
+    // --- Style -> Default Palettes ---
+    const PALETTES = {
+      modern: ["#111827","#6B7280","#E5E7EB","#10B981","#F59E0B"],
+      minimalist: ["#FFFFFF","#F3F4F6","#D1D5DB","#111827","#9CA3AF"],
+      boho: ["#F5E6CC","#D6A77A","#9E6D50","#5A3E36","#8FB996"],
+      coastal: ["#E1F0F3","#FDFBF7","#A6C8C0","#5A7D7C","#D4E6F1"],
+      industrial: ["#1F2937","#4B5563","#9CA3AF","#B45309","#D1D5DB"],
+      scandinavian: ["#FFFFFF","#F5F5F4","#D6E2E9","#3D5A80","#98C1D9"],
+      japandi: ["#F5F1E8","#D7C7AD","#9F8F7A","#2E2A26","#7A8C7F"],
+      midcentury: ["#F7E3C2","#C04C36","#2E5E4E","#2C3A47","#F2C14E"],
+      farmhouse: ["#FAF9F7","#E2E8F0","#CBD5E1","#475569","#B38B59"],
+    };
 
-GOAL:
-Help users describe and design rooms with style suggestions, color palettes, furniture ideas, and layout concepts.
-Structure responses clearly and practically.
-
-CONTEXT:
-- Users may provide photos (not required), dimensions, vibe, and budget.
-- Provide:
-  1) Style recommendations (modern, boho, minimalist, etc.)
-  2) Color palette suggestions (3–5 complementary colors)
-  3) Furniture and decor lists
-  4) Layout ideas
-  5) An image-generation prompt users could plug into an AI image tool
-
-OUTPUT:
-Return valid JSON with the following shape:
-{
-  "theme": string,
-  "palette": string[], // list of HEX codes like "#AABBCC"
-  "suggestions": string[],
-  "layout_tips": string[],
-  "image_prompt": string,
-  "budget_notes": string
-}
-
-CONSTRAINTS:
-- HEX codes must be valid (#RRGGBB).
-- Keep suggestions practical for the stated budget.
-- Tone: inspiring and actionable.
-`;
-
-    function buildUserPrompt(input) {
-      return `
-Extract the user's inputs and produce the JSON.
-
-User Inputs:
-- Room Type: ${input.roomType || "unspecified"}
-- Dimensions: ${input.dimensions || "unspecified"}
-- Desired Vibe: ${input.vibe || "unspecified"}
-- Color Preferences: ${input.colors || "unspecified"}
-- Budget: ${input.budget || "unspecified"}
-- Notes: ${input.notes || "none"}
-`;
-    }
-
-    // ---------- UI helpers ----------
-    const $ = (id) => document.getElementById(id);
-    const form = $("designForm");
-    const submitBtn = $("submitBtn");
-    const errorMsg = $("errorMsg");
-    const resultSection = $("resultSection");
-    const jsonSection = $("jsonSection");
-    const themeEl = $("theme");
-    const budgetNotesEl = $("budgetNotes");
-    const paletteEl = $("palette");
-    const layoutTipsEl = $("layoutTips");
-    const suggestionsEl = $("suggestions");
-    const imagePromptEl = $("imagePrompt");
-    const jsonOut = $("jsonOut");
-    const copyBtn = $("copyBtn");
-
-    function showError(msg) {
-      errorMsg.textContent = msg || "";
-    }
-    function setLoading(isLoading) {
-      submitBtn.disabled = isLoading;
-      submitBtn.textContent = isLoading ? "Thinking..." : "Generate Design Plan";
-    }
-    function clearResult() {
-      resultSection.classList.add("hidden");
-      jsonSection.classList.add("hidden");
-      paletteEl.innerHTML = "";
-      layoutTipsEl.innerHTML = "";
-      suggestionsEl.innerHTML = "";
-      imagePromptEl.value = "";
-      themeEl.textContent = "";
-      budgetNotesEl.textContent = "";
-      jsonOut.textContent = "";
-    }
-    function renderResult(data) {
-      themeEl.textContent = data.theme;
-      budgetNotesEl.textContent = data.budget_notes;
-
-      // Palette
-      const frag = document.createDocumentFragment();
-      data.palette.forEach((color) => {
-        const wrap = document.createElement("div");
-        wrap.className = "flex items-center gap-2";
-        const sw = document.createElement("div");
-        sw.className = "h-8 w-8 rounded-md border border-slate-300";
-        sw.style.backgroundColor = color;
-        sw.title = color;
-        const code = document.createElement("code");
-        code.className = "text-sm";
-        code.textContent = color;
-        wrap.appendChild(sw);
-        wrap.appendChild(code);
-        frag.appendChild(wrap);
-      });
-      paletteEl.appendChild(frag);
-
-      // Lists
-      data.layout_tips.forEach((t) => {
-        const li = document.createElement("li");
-        li.textContent = t;
-        layoutTipsEl.appendChild(li);
-      });
-      data.suggestions.forEach((s) => {
-        const li = document.createElement("li");
-        li.textContent = s;
-        suggestionsEl.appendChild(li);
-      });
-
-      // Image prompt
-      imagePromptEl.value = data.image_prompt;
-
-      // JSON dump
-      jsonOut.textContent = JSON.stringify(data, null, 2);
-
-      resultSection.classList.remove("hidden");
-      jsonSection.classList.remove("hidden");
-    }
-
-    // ---------- Mode detection ----------
-    function getMode() {
-      const checked = document.querySelector('input[name="mode"]:checked');
-      return checked ? checked.value : "vercel";
-    }
-
-    // ---------- Calls ----------
-    async function callVercelAPI(payload) {
-      const baseUrl = $("baseUrl").value.trim();
-      const url = (baseUrl ? baseUrl.replace(/\/+$/, "") : "") + "/api/design";
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data?.error || "API error");
+    function pickPalette(vibe, colorPrefs) {
+      // If user typed a known style word, pick that; else choose a neutral base and blend
+      const key = Object.keys(PALETTES).find(k => vibe.toLowerCase().includes(k));
+      let base = key ? PALETTES[key] : PALETTES.minimalist;
+      // If user specified hex codes, prefer them
+      const hexMatches = colorPrefs.match(/#([0-9a-fA-F]{6})/g);
+      if (hexMatches && hexMatches.length >= 3) {
+        // Limit to 3-5 colors
+        return hexMatches.slice(0,5);
       }
-      return data;
+      // If user named colors, attempt simple mapping
+      const nameMap = {
+        white: "#FFFFFF", black: "#111827", cream: "#FDFBF7", beige: "#F5F1E8", sand: "#D7C7AD", 
+        sage: "#8FB996", "sage green": "#8FB996", green: "#10B981", teal: "#2DD4BF", blue: "#3B82F6", navy: "#1E3A8A",
+        gray: "#9CA3AF", greige: "#D1CFC6", gold: "#F59E0B", brass: "#B38B59", terracotta: "#C04C36"
+      };
+      const found = Object.keys(nameMap).filter(n => colorPrefs.toLowerCase().includes(n)).map(n => nameMap[n]);
+      if (found.length >= 3) {
+        return found.slice(0,5);
+      }
+      // fallback to base
+      return base.slice(0,5);
     }
 
-    async function callOpenAIInBrowser(payload) {
-      const apiKey = $("openaiKey").value.trim();
-      const model = $("openaiModel").value.trim() || "gpt-4o-mini";
-      if (!apiKey) throw new Error("Missing OpenAI API key");
+    function budgetTier(budget) {
+      if (!budget || isNaN(budget)) return "unspecified";
+      if (budget < 1500) return "low";
+      if (budget < 5000) return "medium";
+      return "high";
+    }
 
-      const body = {
-        model,
-        temperature: 0.7,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: buildUserPrompt(payload) }
-        ]
+    function furnitureSuggestions(roomType, tier, vibe, notes) {
+      const commonLow = [
+        "Prioritize anchor pieces first (sofa/bed/table), use affordable side tables",
+        "Choose durable, easy-clean fabrics (performance linen, microfiber)",
+        "Look for budget-friendly sources: IKEA, Target, Wayfair, Facebook Marketplace",
+      ];
+      const commonMed = [
+        "Mix quality anchor pieces with budget decor",
+        "Upgrade lighting (floor lamp, dimmers) for big impact",
+        "Consider West Elm, Article, CB2 for key items",
+      ];
+      const commonHigh = [
+        "Invest in heirloom anchor pieces (solid wood, kiln-dried frames)",
+        "Layer custom textiles and statement lighting",
+        "Consider local makers for bespoke storage or art",
+      ];
+      const tierSets = { low: commonLow, medium: commonMed, high: commonHigh, unspecified: ["Right-size purchases to the room and needs"] };
+
+      const byRoom = {
+        "Living Room": [
+          "Sofa/sectional scaled to the room (leave 30–36in pathways)",
+          "Area rug: leave 8–12in from walls; front legs of seating on rug",
+          "Coffee table ~2/3 sofa width; 16–18in from seating",
+          "Layer task + ambient light: floor lamp, table lamps, dimmable overhead",
+          "Accent chairs or ottomans to balance seating"
+        ],
+        "Bedroom": [
+          "Bed size appropriate to room; 24–36in clearance each side",
+          "Nightstands ~2–4in below mattress top; lamps at eye level when seated",
+          "Rug under bed (8x10 for queen typical) to soften foot traffic",
+          "Dresser or wardrobe with clear drawer swing",
+          "Blackout or linen drapes to control light"
+        ],
+        "Kitchen": [
+          "Stools: 24–26in seat height for counter, 28–30in for bar",
+          "Triangle workflow: sink ↔ cooktop ↔ fridge clear paths",
+          "Under-cabinet lighting for task zones",
+          "Matte finishes to hide fingerprints on high-touch surfaces"
+        ],
+        "Dining Room": [
+          "Allow 36–42in clearance around table",
+          "Pendant center over table; bottom 30–36in above tabletop",
+          "Rug extends 24in past chairs so they stay on the rug",
+          "Mix upholstered and wood chairs for comfort + texture"
+        ],
+        "Home Office": [
+          "Desk near natural light (glare-controlled)",
+          "Ergonomic chair; wire management to reduce visual clutter",
+          "Background wall styling for calls (art, shelves)",
+          "Layered lighting: desk + ambient + accent"
+        ],
+        "Bathroom": [
+          "Warm LED bulbs (2700–3000K) at face level on both sides of mirror",
+          "Non-slip bath rug; sealed storage for humidity",
+          "Hooks and trays to corral daily items"
+        ],
+        "Entryway": [
+          "Bench with shoe storage; wall hooks or slim console",
+          "Mirror to bounce light; tray for keys",
+          "Durable doormat and rug runner"
+        ],
+        "Studio": [
+          "Zoning with rugs and open shelving",
+          "Sofa bed or daybed for multipurpose use",
+          "Fold-away dining/desk surfaces"
+        ],
       };
 
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "authorization": `Bearer ${apiKey}`
+      const vibeTouch = vibe.toLowerCase().includes("coastal") ? ["Woven textures (jute, rattan), light oak, linen"]
+        : vibe.toLowerCase().includes("boho") ? ["Layered textiles, cane details, plants"]
+        : vibe.toLowerCase().includes("industrial") ? ["Metal accents, concrete-look surfaces, leather"]
+        : vibe.toLowerCase().includes("mid") ? ["Tapered legs, walnut, saturated accents"]
+        : vibe.toLowerCase().includes("scandi") ? ["Pale woods, simple lines, cozy textiles"]
+        : vibe.toLowerCase().includes("japandi") ? ["Low profiles, natural fibers, calm neutrals"]
+        : vibe.toLowerCase().includes("minimal") ? ["Hidden storage, clean lines, limited palette"]
+        : [];
+
+      const base = byRoom[roomType] || [];
+      const tierList = tierSets[tier] || [];
+      const noteNudges = notes
+        ? [
+            notes.toLowerCase().includes("storage") ? "Add closed storage (fluted sideboard, basket trunks)" : null,
+            notes.toLowerCase().includes("kid") ? "Choose rounded corners and performance fabrics" : null,
+            notes.toLowerCase().includes("pet") ? "Flat-weave or indoor/outdoor rug; washable covers" : null,
+            notes.toLowerCase().includes("keep") ? "Plan around existing item to avoid crowding and color clash" : null,
+          ].filter(Boolean)
+        : [];
+
+      return [...new Set([...tierList, ...base, ...vibeTouch, ...noteNudges])];
+    }
+
+    function layoutIdeas(roomType, dims) {
+      const ideas = [];
+      const size = parseDims(dims);
+      const longWall = size ? Math.max(size.w, size.h) : null;
+
+      if (roomType === "Living Room") {
+        ideas.push("Float seating off walls if space allows; create 30–36in walkways");
+        ideas.push("TV centered at eye level; 1.5× screen diagonal viewing distance");
+        ideas.push("Use rug to define conversation zone; align with sofa front legs");
+      }
+      if (roomType === "Bedroom") {
+        ideas.push("Bed on longest unbroken wall; avoid blocking windows if possible");
+        ideas.push("Nightstands align with bed width; dresser opposite or adjacent");
+      }
+      if (roomType === "Home Office") {
+        ideas.push("Desk facing room or window (control glare); shelves behind for backdrop");
+        ideas.push("Place task lighting on opposite side of writing hand to reduce shadows");
+      }
+      if (roomType === "Dining Room") {
+        ideas.push("Center table under pendant; 36–42in clearance around perimeter");
+        ideas.push("Consider round table in tight walk-through spaces");
+      }
+      if (longWall && longWall >= 18) {
+        ideas.push("Consider a two-zone plan: conversation + reading/work nook");
+      }
+      if (size && (size.w * size.h) <= 120) {
+        ideas.push("Choose leggy furniture and mirrors to visually expand space");
+      }
+      return ideas;
+    }
+
+    function parseDims(str) {
+      if (!str) return null;
+      // Accept formats like "12 x 16", "12x16", "12 by 16"
+      const m = String(str).toLowerCase().replace(/\s+/g,'').match(/^(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/);
+      if (!m) return null;
+      const w = parseFloat(m[1]);
+      const h = parseFloat(m[2]);
+      return { w, h };
+    }
+
+    function titleCase(s){return s.replace(/(^|\s)\w/g, m=>m.toUpperCase());}
+
+    function buildTheme(vibe, roomType){
+      const primaryStyle = (vibe || '').trim() || 'Modern Minimalist';
+      return `${titleCase(primaryStyle)} ${roomType}`.trim();
+    }
+
+    function buildImagePrompts(theme, palette, roomType, light, notes){
+      const hex = palette.join(', ');
+      const base = `${theme.toLowerCase()} with ${light.toLowerCase()} natural light, cohesive styling, clean composition, styled for magazine shoot`;
+      const general = `Bright ${roomType.toLowerCase()} in ${theme.toLowerCase()} style, palette ${hex}, soft shadows, high detail, photorealistic, 24mm lens perspective, natural textures visible`;
+      const openai = `Photorealistic ${roomType.toLowerCase()} — ${theme}. Palette: ${hex}. ${light} light. Styled props, balanced symmetry, clean lines. Render at 1024x1024.`;
+      const midjourney = `/${"imagine"} ${general}, interior, 4k, global illumination, realistic materials, --ar 3:2 --v 6.0`;
+      const replit = `Interior render: ${general}. Emphasize material realism (linen, wood grain). Avoid over-saturation.`;
+      return { base, openai, midjourney, replit };
+    }
+
+    function generateDesign(){
+      const roomType = document.getElementById('roomType').value;
+      const dimensions = document.getElementById('dimensions').value.trim();
+      const vibe = document.getElementById('vibe').value.trim() || 'modern minimalist';
+      const colorPrefs = document.getElementById('colors').value.trim();
+      const budgetVal = parseFloat(document.getElementById('budget').value);
+      const light = document.getElementById('light').value;
+      const notes = document.getElementById('notes').value.trim();
+
+      const palette = pickPalette(vibe, colorPrefs);
+      const tier = budgetTier(budgetVal);
+      const theme = buildTheme(vibe, roomType);
+      const suggestions = furnitureSuggestions(roomType, tier, vibe, notes);
+      const layouts = layoutIdeas(roomType, dimensions);
+      const imgPrompts = buildImagePrompts(theme, palette, roomType, light, notes);
+
+      const summary = `A ${roomType.toLowerCase()} with a ${vibe.toLowerCase()} feel. ${budgetVal?`Budget: $${Math.round(budgetVal).toLocaleString()}. `:""}${dimensions?`Approx. size ${dimensions}ft. `:""}Focus on proportion, layered lighting, and texture.`;
+
+      const json = {
+        theme,
+        extracted: {
+          room_type: roomType,
+          dimensions: dimensions || null,
+          vibe: vibe,
+          color_preferences: colorPrefs || null,
+          budget: isNaN(budgetVal) ? null : budgetVal,
+          natural_light: light,
+          notes: notes || null,
         },
-        body: JSON.stringify(body)
-      });
-
-      const json = await res.json();
-      if (!res.ok) {
-        const msg = json?.error?.message || "OpenAI error";
-        throw new Error(msg);
-      }
-      const content = json?.choices?.[0]?.message?.content || "{}";
-      let parsed;
-      try {
-        parsed = JSON.parse(content);
-      } catch {
-        throw new Error("Model returned non-JSON content");
-      }
-
-      // Minimal shape check
-      const valid =
-        parsed &&
-        typeof parsed.theme === "string" &&
-        Array.isArray(parsed.palette) &&
-        Array.isArray(parsed.suggestions) &&
-        Array.isArray(parsed.layout_tips) &&
-        typeof parsed.image_prompt === "string" &&
-        typeof parsed.budget_notes === "string";
-
-      if (!valid) {
-        throw new Error("Model returned unexpected structure");
-      }
-      return parsed;
-    }
-
-    // ---------- Submit handler ----------
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      showError("");
-      clearResult();
-      setLoading(true);
-
-      const payload = {
-        roomType: $("roomType").value.trim(),
-        dimensions: $("dimensions").value.trim(),
-        vibe: $("vibe").value.trim(),
-        colors: $("colors").value.trim(),
-        budget: $("budget").value.trim(),
-        notes: $("notes").value.trim()
+        palette,
+        suggestions,
+        layout_ideas: layouts,
+        image_prompt: imgPrompts.base,
+        prompts: imgPrompts,
       };
 
+      // UI populate
+      document.getElementById('summaryCard').classList.remove('hidden');
+      document.getElementById('summaryText').textContent = summary;
+
+      const sw = document.getElementById('swatches');
+      sw.innerHTML = '';
+      palette.forEach(hex => {
+        const item = document.createElement('div');
+        item.className = 'rounded-xl border border-slate-200 p-2';
+        item.innerHTML = `
+          <div class="h-10 w-full rounded-lg" style="background:${hex}"></div>
+          <div class="mt-2 text-center text-xs code">${hex}</div>
+        `;
+        sw.appendChild(item);
+      });
+      document.getElementById('paletteCard').classList.remove('hidden');
+
+      const sList = document.getElementById('suggestionsList');
+      sList.innerHTML = '';
+      suggestions.forEach(s => {
+        const li = document.createElement('li');
+        li.textContent = s;
+        sList.appendChild(li);
+      });
+      document.getElementById('suggestionsCard').classList.remove('hidden');
+
+      const lList = document.getElementById('layoutList');
+      lList.innerHTML = '';
+      layouts.forEach(s => {
+        const li = document.createElement('li');
+        li.textContent = s;
+        lList.appendChild(li);
+      });
+      document.getElementById('layoutCard').classList.remove('hidden');
+
+      const promptEl = document.getElementById('promptText');
+      promptEl.textContent = `AI Image Prompt (general):\n${imgPrompts.base}\n\nOpenAI Image: \n${imgPrompts.openai}\n\nMidjourney: \n${imgPrompts.midjourney}\n\nReplit AI Canvas: \n${imgPrompts.replit}`;
+      document.getElementById('promptsCard').classList.remove('hidden');
+
+      const jsonEl = document.getElementById('jsonOut');
+      jsonEl.textContent = JSON.stringify(json, null, 2);
+      document.getElementById('jsonCard').classList.remove('hidden');
+    }
+
+    // Buttons
+    document.getElementById('presetBtn').addEventListener('click', () => {
+      document.getElementById('roomType').value = 'Living Room';
+      document.getElementById('dimensions').value = '12 x 16';
+      document.getElementById('vibe').value = 'coastal minimalist';
+      document.getElementById('colors').value = 'cream, soft teal, seafoam, driftwood gray';
+      document.getElementById('budget').value = '2000';
+      document.getElementById('light').value = 'Abundant';
+      document.getElementById('notes').value = 'Keep existing teak side table; need washable rug; pet-friendly fabrics';
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      document.getElementById('designForm').reset();
+      ["summaryCard","paletteCard","suggestionsCard","layoutCard","promptsCard","jsonCard"].forEach(id=>document.getElementById(id).classList.add('hidden'));
+    });
+
+    document.getElementById('copyJSON').addEventListener('click', () => {
+      const txt = document.getElementById('jsonOut').textContent;
+      navigator.clipboard.writeText(txt).then(()=>{
+        toast('JSON copied');
+      });
+    });
+    document.getElementById('copyPalette').addEventListener('click', () => {
+      const txt = (document.getElementById('jsonOut').textContent || '{}');
       try {
-        const mode = getMode();
-        const data = mode === "openai"
-          ? await callOpenAIInBrowser(payload)
-          : await callVercelAPI(payload);
-
-        renderResult(data);
-      } catch (err) {
-        showError(String(err?.message || err));
-      } finally {
-        setLoading(false);
-      }
+        const obj = JSON.parse(txt);
+        navigator.clipboard.writeText((obj.palette || []).join(', ')).then(()=>toast('Palette HEX copied'));
+      } catch(e){ toast('Generate a plan first'); }
+    });
+    document.getElementById('copyPrompts').addEventListener('click', () => {
+      const txt = document.getElementById('promptText').textContent;
+      navigator.clipboard.writeText(txt).then(()=>toast('Prompts copied'));
     });
 
-    // ---------- Copy JSON ----------
-    copyBtn.addEventListener("click", () => {
-      const text = jsonOut.textContent || "";
-      if (!text) return;
-      navigator.clipboard.writeText(text);
+    document.getElementById('loadCoastal').addEventListener('click', () => {
+      document.getElementById('presetBtn').click();
+      generateDesign();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     });
+
+    // Tiny toast
+    function toast(msg){
+      const t = document.createElement('div');
+      t.textContent = msg;
+      t.className = 'fixed left-1/2 top-6 z-50 -translate-x-1/2 rounded-full bg-slate-900 px-4 py-2 text-sm text-white shadow-lg';
+      document.body.appendChild(t);
+      setTimeout(()=>t.remove(), 1400);
+    }
   </script>
 </body>
 </html>
